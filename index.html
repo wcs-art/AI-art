@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STAR 法则简历优化 - 一份母版，多岗位定制</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    /* 单页版补充样式 */
+    body { background: var(--bg, #f5f7fb); }
+    .single-wrap { max-width: 880px; margin: 0 auto; padding: 28px 16px 80px; }
+    .single-head { text-align: center; margin-bottom: 24px; }
+    .single-head h1 { font-size: 26px; margin: 0 0 6px; }
+    .single-head p { color: #6b7280; margin: 0; }
+    .step-label { display: inline-block; background: #4f46e5; color: #fff; border-radius: 999px; padding: 2px 12px; font-size: 13px; margin-right: 8px; }
+    .import-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .import-row .btn { flex: 1; min-width: 140px; }
+    .muted { color: #9ca3af; }
+    .resume-ok { color: #059669; font-weight: 600; }
+    .pre { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; white-space: pre-wrap; font-size: 12px; max-height: 260px; overflow: auto; }
+    .card.warn { border-color: #fde68a; background: #fffbeb; }
+    .modal.wide { width: min(680px, 92vw); }
+    details summary { cursor: pointer; color: #4f46e5; font-size: 13px; }
+    .ai-setting { font-size: 13px; }
+    .ai-setting select, .ai-setting input { margin-top: 6px; }
+    #resumeTip { font-size: 13px; color: #d97706; min-height: 18px; }
+    /* 拖拽上传区 */
+    .dropzone {
+      margin-top: 12px; padding: 22px 14px; text-align: center; cursor: pointer;
+      border: 2px dashed #c7cbe0; border-radius: 12px; background: #fafbff;
+      color: #6b7280; font-size: 14px; transition: border-color .15s, background .15s, transform .1s;
+      user-select: none;
+    }
+    .dropzone .dz-icon { font-size: 26px; display: block; margin-bottom: 6px; }
+    .dropzone .dz-sub { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+    .dropzone:hover { border-color: #4f46e5; background: #f5f6ff; }
+    .dropzone.dragover { border-color: #4f46e5; background: #eef0ff; transform: scale(1.01); color: #4f46e5; }
+    .dropzone.busy { pointer-events: none; opacity: .6; }
+    .dropzone.small { padding: 12px 10px; margin-top: 8px; font-size: 13px; }
+    /* 母版锁定条 */
+    .master-lock {
+      display: flex; align-items: center; gap: 8px; margin-top: 10px;
+      background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46;
+      border-radius: 8px; padding: 8px 12px; font-size: 13px;
+    }
+    /* 岗位卡片 */
+    .job-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px 16px; margin-top: 12px; background: #fff; }
+    .job-card .job-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .job-card .job-title { font-weight: 700; font-size: 15px; flex: 1; min-width: 120px; }
+    .job-card textarea { margin-top: 8px; }
+    .job-card .job-meta { font-size: 12px; color: #9ca3af; margin-top: 6px; }
+    .job-card .job-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .job-result { margin-top: 10px; border-top: 1px dashed #e5e7eb; padding-top: 10px; }
+    .btn.sm { padding: 6px 12px; font-size: 13px; }
+    .btn.danger { background: #fff; color: #dc2626; border: 1px solid #fecaca; }
+    .btn.danger:hover { background: #fef2f2; }
+  </style>
+  <!-- 可选增强库：多 CDN 自动降级加载（jsdelivr 国内不稳时切换镜像），失败不影响核心功能 -->
+  <script>
+    (function () {
+      function loadChain(urls, check, onDone) {
+        var i = 0;
+        (function next() {
+          if (i >= urls.length) { onDone && onDone(null); return; }
+          var url = urls[i++];
+          var s = document.createElement('script');
+          s.src = url;
+          s.onload = function () { if (!check || check()) { onDone && onDone(url); } else next(); };
+          s.onerror = next;
+          document.head.appendChild(s);
+        })();
+      }
+      // tesseract.js（图片 OCR）—— 优先用本地自托管（vendor/tesseract/），CDN 仅作兜底
+      loadChain([
+        'vendor/tesseract/tesseract.min.js',
+        'https://registry.npmmirror.com/tesseract.js/5.1.1/files/dist/tesseract.min.js',
+        'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js',
+        'https://unpkg.com/tesseract.js@5/dist/tesseract.min.js'
+      ], function () { return !!window.Tesseract; });
+      // pdf.js（PDF 解析首选引擎；记录基址供 worker 使用；全部失败时打标记以便立即回退内置引擎）
+      loadChain([
+        'https://registry.npmmirror.com/pdfjs-dist/3.11.174/files/build/pdf.min.js',
+        'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',
+        'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js'
+      ], function () { return !!window.pdfjsLib; }, function (url) {
+        if (url) window.__pdfjsWorkerSrc = url.replace(/pdf\.min\.js$/, 'pdf.worker.min.js');
+        else window.__pdfjsFailed = true;
+      });
+    })();
+  </script>
+</head>
+<body>
+  <div class="single-wrap">
+    <div class="single-head">
+      <h1>✨ STAR 法则简历优化</h1>
+      <p>一份<b>母版简历</b>永不改动 · 针对不同岗位 JD 各生成一份定制简历 PDF</p>
+    </div>
+
+    <!-- 第一步：母版简历（只读） -->
+    <div class="card">
+      <h2><span class="step-label">1</span>你的母版简历<span style="font-size:13px;color:#059669;margin-left:8px">🔒 导入后只读，优化永远在副本上进行</span></h2>
+      <div id="resumeStatus" class="mt"></div>
+      <div id="resumeTip"></div>
+      <div class="dropzone" id="resumeDrop">
+        <span class="dz-icon">📥</span>
+        把 <b>PDF 或简历截图</b> 拖到这里，或 <b>点击选择文件</b>
+        <div class="dz-sub">支持 .pdf / .png / .jpg 等，也可直接 Ctrl+V 粘贴截图</div>
+      </div>
+      <div class="import-row">
+        <button class="btn ghost" id="pasteBtn">✏️ 粘贴文字</button>
+        <button class="btn gray" id="clearResume" style="display:none">🗑 清除母版（重新导入）</button>
+      </div>
+      <input type="file" id="pdfFile" accept=".pdf,application/pdf" hidden />
+      <input type="file" id="imgFile" accept="image/*" hidden />
+      <input type="file" id="resumeAnyFile" accept=".pdf,application/pdf,image/*" hidden />
+    </div>
+
+    <!-- 第二步：岗位列表（每个岗位独立定制） -->
+    <div class="card">
+      <h2><span class="step-label">2</span>目标岗位（可添加多个，各生成一份定制简历）</h2>
+      <div id="jobList"></div>
+      <div class="import-row">
+        <button class="btn" id="addJobBtn">➕ 添加岗位</button>
+      </div>
+      <input type="file" id="jdImgFile" accept="image/*" hidden />
+    </div>
+
+    <!-- AI 设置 -->
+    <div class="card">
+      <details class="ai-setting">
+        <summary>⚙️ AI 设置（默认本地演示，可接真实 AI）</summary>
+        <div class="mt">
+          <label>模式</label>
+          <select id="aiMode">
+            <option value="local">本地演示（规则生成，开箱即用）</option>
+            <option value="custom">自定义 AI 服务器（真实 AI）</option>
+          </select>
+          <div id="endpointRow" style="display:none">
+            <label class="mt">服务器地址（如 http://127.0.0.1:8300/，启动 server/local-ai-server.js）</label>
+            <input id="aiEndpoint" placeholder="http://127.0.0.1:8300/" />
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- 生成结果预览 -->
+    <div id="result"></div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <div id="modalRoot"></div>
+
+  <!-- 核心库（顺序敏感） -->
+  <script src="js/util.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/pdfLite.js"></script>
+  <script src="js/pdfParse.js"></script>
+  <script src="js/ocr.js"></script>
+  <script src="js/pdfExport.js"></script>
+  <script src="js/pdfRewrite.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
